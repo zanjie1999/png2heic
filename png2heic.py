@@ -1,19 +1,22 @@
 # coding=utf-8
 
 # png2heic 批量图片转heic  gif转webp
-# v2.1
+# v2.2
 # Sparkle 20220228
 # 需要ffmpeg mp4box
 # brew install ffmpeg mp4box
 # apt-get install ffmpeg mp4box
 
-import sys, os, uuid
+import sys, os, uuid, shutil
 
 # 输入图片目录
 inPath = './'
 
 # 输出图片目录
 outPath = 'heic/'
+
+# 是否把gif转webp
+gif2webp = True
 
 tmpFile = outPath + str( uuid.uuid4())[:8] + '.avc'
 
@@ -33,9 +36,14 @@ def covent(dir):
         elif i.endswith('.jpeg') or i.endswith('.JPEG'):
             outName = i[:-4] + 'heic'
         elif i.endswith('.gif') or i.endswith('.GIF'):
-            outDirName = os.path.join(outDir, i[:-3] + 'webp')
-            if not os.path.exists(outDirName):
-                os.system('ffmpeg -i "' + inFile + '" -vcodec webp -loop 0 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -pix_fmt yuva420p "' + outDirName + '"')
+            if gif2webp:
+                outDirName = os.path.join(outDir, i[:-3] + 'webp')
+                if not os.path.exists(outDirName):
+                    os.system('ffmpeg -i "' + inFile + '" -vcodec webp -loop 0 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -pix_fmt yuva420p "' + outDirName + '"')
+            else:
+                outDirName = os.path.join(outDir, i[:-3] + 'gif')
+                if not os.path.exists(outDirName):
+                    shutil.copy(inFile, outDirName)
         if outName:
             outDirName = os.path.join(outDir,outName)
             if not os.path.exists(outDirName):
