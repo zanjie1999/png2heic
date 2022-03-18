@@ -1,24 +1,34 @@
 # coding=utf-8
 
 # png2heic 批量图片转heic  gif转webp
-# v2.2
+# v3.4
 # Sparkle 20220228
-# 需要ffmpeg mp4box
-# brew install ffmpeg mp4box
-# apt-get install ffmpeg mp4box
+# 需要ffmpeg mp4box exiftool
+# windows下需要安装ffmpeg gpac exiftool
+# brew install ffmpeg mp4box exiftool
+# apt-get install ffmpeg mp4box exiftool
 
-import sys, os, uuid, shutil
+import os, uuid, shutil
 
 # 输入图片目录
-inPath = './'
+inPath = 'Screenshots/'
 
 # 输出图片目录
 outPath = 'heic/'
 
 # 是否把gif转webp
-gif2webp = True
+gif2webp = False
 
-tmpFile = outPath + str( uuid.uuid4())[:8] + '.avc'
+# 是否复制exif信息
+copyExif = False
+
+# 使用yuv444 10bit Android不兼容 颜色会好一丁点
+useYuv444 = False
+
+# 转换heic 可以将不支持的heic转换成目标heic
+coventHeic = False
+
+tmpFile = outPath + str( uuid.uuid4())[:8] + '.hvc'
 
 def covent(dir):
     print('Dir: ' + dir)
@@ -39,18 +49,35 @@ def covent(dir):
             if gif2webp:
                 outDirName = os.path.join(outDir, i[:-3] + 'webp')
                 if not os.path.exists(outDirName):
+                    print(inFile,' ',outDirName)
                     os.system('ffmpeg -i "' + inFile + '" -vcodec webp -loop 0 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -pix_fmt yuva420p "' + outDirName + '"')
+                    if copyExif:
+                        os.system('exiftool -tagsFromFile "' + inFile + '" -overwrite_original "' + outDirName + '"')
             else:
                 outDirName = os.path.join(outDir, i[:-3] + 'gif')
                 if not os.path.exists(outDirName):
+                    print(inFile,' ',outDirName)
                     shutil.copy(inFile, outDirName)
+        elif coventHeic and (i.endswith('.HEIC') or i.endswith('.heic')):
+            outDirName = os.path.join(outDir, i[:-4] + 'heic')
+            if not os.path.exists(outDirName):
+                print(inFile,' ',outDirName)
+                os.system('mp4box -dump-item 1:path=' + tmpFile + '.hvc1 "' + inFile + '"')
+                os.system('ffmpeg -i ' + tmpFile + '.hvc1 -crf 10 -psy-rd 0.4 -aq-strength 0.4 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset veryslow -pix_fmt yuv420p10le -f hevc ' + tmpFile)
+                os.system('mp4box -add-image ' + tmpFile + ':primary -ab heic -new "' + outDirName + '"')
+                os.remove(tmpFile + '.hvc1')
+                os.remove(tmpFile)
+                if copyExif:
+                    os.system('exiftool -tagsFromFile "' + inFile + '" -overwrite_original "' + outDirName + '"')
         if outName:
             outDirName = os.path.join(outDir,outName)
             if not os.path.exists(outDirName):
                 print(inFile,' ',outDirName)
-                os.system('ffmpeg -i "' + inFile + '" -crf 10 -psy-rd 0.4 -aq-strength 0.4 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset veryslow -pix_fmt yuv444p10le -f hevc ' + tmpFile)
-                os.system('mp4box -add-image ' + tmpFile + ' -ab heic -new "' + outDirName + '"')
+                os.system('ffmpeg -i "' + inFile + '" -crf 10 -psy-rd 0.4 -aq-strength 0.4 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset veryslow -pix_fmt ' + ('yuv444p10le' if useYuv444 else 'yuv420p10le') + ' -f hevc ' + tmpFile)
+                os.system('mp4box -add-image ' + tmpFile + ':primary -ab heic -new "' + outDirName + '"')
                 os.remove(tmpFile)
+                if copyExif:
+                    os.system('exiftool -tagsFromFile "' + inFile + '" -overwrite_original "' + outDirName + '"')
                 # sys.exit(0)
     
     if os.listdir(outDir) == []:
