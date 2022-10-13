@@ -1,7 +1,7 @@
 # coding=utf-8
 
 # png2heic 批量图片转heic  gif转webp
-# v3.4
+# v4.0
 # Sparkle 20220228
 # 需要ffmpeg mp4box exiftool
 # windows下需要安装ffmpeg gpac exiftool
@@ -11,7 +11,7 @@
 import os, uuid, shutil
 
 # 输入图片目录
-inPath = 'Screenshots/'
+inPath = './'
 
 # 输出图片目录
 outPath = 'heic/'
@@ -30,15 +30,21 @@ coventHeic = False
 
 tmpFile = outPath + str( uuid.uuid4())[:8] + '.hvc'
 
+def exec(cmd):
+    print(cmd)
+    os.system(cmd)
+
 def covent(dir):
     print('Dir: ' + dir)
     l = os.listdir(dir)
+    l = sorted(l, key=lambda x: os.path.getctime(os.path.join(dir, x)))
     outDir = os.path.join(outPath,dir)
     if not os.path.exists(outDir):
         os.makedirs(outDir)
     for i in l:
         inFile = os.path.join(dir,i)
         outName = None
+        outDirName = None
         if os.path.isdir(inFile):
             covent(inFile)
         elif i.endswith('.jpg') or i.endswith('.png') or i.endswith('.JPG') or i.endswith('.PNG'):
@@ -50,9 +56,9 @@ def covent(dir):
                 outDirName = os.path.join(outDir, i[:-3] + 'webp')
                 if not os.path.exists(outDirName):
                     print(inFile,' ',outDirName)
-                    os.system('ffmpeg -i "' + inFile + '" -vcodec webp -loop 0 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -pix_fmt yuva420p "' + outDirName + '"')
+                    exec('ffmpeg -i "' + inFile + '" -vcodec webp -loop 0 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -pix_fmt yuva420p "' + outDirName + '"')
                     if copyExif:
-                        os.system('exiftool -tagsFromFile "' + inFile + '" -overwrite_original "' + outDirName + '"')
+                        exec('exiftool -tagsFromFile "' + inFile + '" -overwrite_original "' + outDirName + '"')
             else:
                 outDirName = os.path.join(outDir, i[:-3] + 'gif')
                 if not os.path.exists(outDirName):
@@ -62,23 +68,27 @@ def covent(dir):
             outDirName = os.path.join(outDir, i[:-4] + 'heic')
             if not os.path.exists(outDirName):
                 print(inFile,' ',outDirName)
-                os.system('mp4box -dump-item 1:path=' + tmpFile + '.hvc1 "' + inFile + '"')
-                os.system('ffmpeg -i ' + tmpFile + '.hvc1 -crf 10 -psy-rd 0.4 -aq-strength 0.4 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset veryslow -pix_fmt yuv420p10le -f hevc ' + tmpFile)
-                os.system('mp4box -add-image ' + tmpFile + ':primary -ab heic -new "' + outDirName + '"')
+                exec('mp4box -dump-item 1:path=' + tmpFile + '.hvc1 "' + inFile + '"')
+                exec('ffmpeg -i ' + tmpFile + '.hvc1 -crf 10 -psy-rd 0.4 -aq-strength 0.4 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset veryslow -pix_fmt yuv420p10le -f hevc ' + tmpFile)
+                exec('mp4box -add-image ' + tmpFile + ':primary -ab heic -new "' + outDirName + '"')
                 os.remove(tmpFile + '.hvc1')
                 os.remove(tmpFile)
                 if copyExif:
-                    os.system('exiftool -tagsFromFile "' + inFile + '" -overwrite_original "' + outDirName + '"')
+                    exec('exiftool -tagsFromFile "' + inFile + '" -overwrite_original "' + outDirName + '"')
         if outName:
             outDirName = os.path.join(outDir,outName)
             if not os.path.exists(outDirName):
                 print(inFile,' ',outDirName)
-                os.system('ffmpeg -i "' + inFile + '" -crf 10 -psy-rd 0.4 -aq-strength 0.4 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset veryslow -pix_fmt ' + ('yuv444p10le' if useYuv444 else 'yuv420p10le') + ' -f hevc ' + tmpFile)
-                os.system('mp4box -add-image ' + tmpFile + ':primary -ab heic -new "' + outDirName + '"')
+                exec('ffmpeg -i "' + inFile + '" -crf 10 -psy-rd 0.4 -aq-strength 0.4 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset veryslow -pix_fmt ' + ('yuv444p10le' if useYuv444 else 'yuv420p10le') + ' -f hevc ' + tmpFile)
+                exec('mp4box -add-image ' + tmpFile + ':primary -ab heic -new "' + outDirName + '"')
                 os.remove(tmpFile)
                 if copyExif:
-                    os.system('exiftool -tagsFromFile "' + inFile + '" -overwrite_original "' + outDirName + '"')
-                # sys.exit(0)
+                    exec('exiftool -tagsFromFile "' + inFile + '" -overwrite_original "' + outDirName + '"')
+                
+        if outDirName:
+            s = os.stat(inFile) # 同步 访问时间 修改时间
+            os.utime(outDirName, (s.st_atime, s.st_mtime))
+            
     
     if os.listdir(outDir) == []:
         os.rmdir(outDir)
