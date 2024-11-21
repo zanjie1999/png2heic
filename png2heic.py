@@ -99,7 +99,7 @@ def covent(dir):
             os.utime(outDirName, (s.st_atime, s.st_mtime))
 
         # 确保输出文件正常再删除
-        if deleteInFile and os.path.getsize(outDirName) > 1:
+        if deleteInFile and outDirName and os.path.getsize(outDirName) > 1:
             os.remove(inFile)
     
     if os.listdir(outDir) == []:
