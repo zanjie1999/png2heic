@@ -1,7 +1,7 @@
 # coding=utf-8
 
 # png2heic 批量图片转heic  gif转webp
-# v4.0
+# v4.1
 # Sparkle 20220228
 # 需要ffmpeg mp4box exiftool
 # windows下需要安装ffmpeg gpac exiftool
@@ -11,7 +11,7 @@
 import os, uuid, shutil
 
 # 输入图片目录
-inPath = './'
+inPath = 'Screenshots/'
 
 # 输出图片目录
 outPath = 'heic/'
@@ -27,6 +27,15 @@ useYuv444 = False
 
 # 转换heic 可以将不支持的heic转换成目标heic
 coventHeic = False
+
+# 删除原文件
+deleteInFile = False
+
+# 三个依赖的执行文件路径
+ffmpeg = 'ffmpeg'
+mp4box = 'mp4box'
+exiftool = 'exiftool'
+
 
 tmpFile = outPath + str( uuid.uuid4())[:8] + '.hvc'
 
@@ -56,9 +65,9 @@ def covent(dir):
                 outDirName = os.path.join(outDir, i[:-3] + 'webp')
                 if not os.path.exists(outDirName):
                     print(inFile,' ',outDirName)
-                    exec('ffmpeg -i "' + inFile + '" -vcodec webp -loop 0 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -pix_fmt yuva420p "' + outDirName + '"')
+                    exec(ffmpeg + ' -i "' + inFile + '" -vcodec webp -loop 0 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -pix_fmt yuva420p "' + outDirName + '"')
                     if copyExif:
-                        exec('exiftool -tagsFromFile "' + inFile + '" -overwrite_original "' + outDirName + '"')
+                        exec(exiftool + ' -tagsFromFile "' + inFile + '" -overwrite_original "' + outDirName + '"')
             else:
                 outDirName = os.path.join(outDir, i[:-3] + 'gif')
                 if not os.path.exists(outDirName):
@@ -68,27 +77,30 @@ def covent(dir):
             outDirName = os.path.join(outDir, i[:-4] + 'heic')
             if not os.path.exists(outDirName):
                 print(inFile,' ',outDirName)
-                exec('mp4box -dump-item 1:path=' + tmpFile + '.hvc1 "' + inFile + '"')
-                exec('ffmpeg -i ' + tmpFile + '.hvc1 -crf 10 -psy-rd 0.4 -aq-strength 0.4 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset veryslow -pix_fmt yuv420p10le -f hevc ' + tmpFile)
-                exec('mp4box -add-image ' + tmpFile + ':primary -ab heic -new "' + outDirName + '"')
+                exec(mp4box + ' -dump-item 1:path=' + tmpFile + '.hvc1 "' + inFile + '"')
+                exec(ffmpeg + ' -i ' + tmpFile + '.hvc1 -crf 10 -psy-rd 0.4 -aq-strength 0.4 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset veryslow -pix_fmt yuv420p10le -f hevc ' + tmpFile)
+                exec(mp4box + ' -add-image ' + tmpFile + ':primary -ab heic -new "' + outDirName + '"')
                 os.remove(tmpFile + '.hvc1')
                 os.remove(tmpFile)
                 if copyExif:
-                    exec('exiftool -tagsFromFile "' + inFile + '" -overwrite_original "' + outDirName + '"')
+                    exec(exiftool + ' -tagsFromFile "' + inFile + '" -overwrite_original "' + outDirName + '"')
         if outName:
             outDirName = os.path.join(outDir,outName)
             if not os.path.exists(outDirName):
                 print(inFile,' ',outDirName)
-                exec('ffmpeg -i "' + inFile + '" -crf 10 -psy-rd 0.4 -aq-strength 0.4 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset veryslow -pix_fmt ' + ('yuv444p10le' if useYuv444 else 'yuv420p10le') + ' -f hevc ' + tmpFile)
-                exec('mp4box -add-image ' + tmpFile + ':primary -ab heic -new "' + outDirName + '"')
+                exec(ffmpeg + ' -i "' + inFile + '" -crf 10 -psy-rd 0.4 -aq-strength 0.4 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset veryslow -pix_fmt ' + ('yuv444p10le' if useYuv444 else 'yuv420p10le') + ' -f hevc ' + tmpFile)
+                exec(mp4box + ' -add-image ' + tmpFile + ':primary -ab heic -new "' + outDirName + '"')
                 os.remove(tmpFile)
                 if copyExif:
-                    exec('exiftool -tagsFromFile "' + inFile + '" -overwrite_original "' + outDirName + '"')
+                    exec(exiftool + ' -tagsFromFile "' + inFile + '" -overwrite_original "' + outDirName + '"')
                 
         if outDirName:
             s = os.stat(inFile) # 同步 访问时间 修改时间
             os.utime(outDirName, (s.st_atime, s.st_mtime))
-            
+
+        # 确保输出文件正常再删除
+        if deleteInFile and os.path.getsize(outDirName) > 1:
+            os.remove(inFile)
     
     if os.listdir(outDir) == []:
         os.rmdir(outDir)
