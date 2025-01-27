@@ -17,6 +17,10 @@ heic不支持透明，因为hevc没有透明，后续考虑支持检测透明png
 另外使用golang写了个有损图片压缩工具，支持png和jpg，无需任何依赖  
 https://github.com/zanjie1999/mecopy
 
+# 安装依赖
+看png2heic.py文件头部，想必没什么人真的会看文档  
+配置好了直接运行就会自动转换
+
 # windows的heic支持
 在微软自带的商店安装heif插件  
 在cmd运行 `start ms-windows-store://pdp/?ProductId=9n4wgh0z6vhq` 安装hevc插件  
