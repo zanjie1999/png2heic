@@ -1,20 +1,24 @@
 # coding=utf-8
 
 # png2heic 批量图片转heic  gif转webp
-# v4.1
+# v5.0
 # Sparkle 20220228
 # 需要ffmpeg mp4box exiftool
-# windows下需要安装ffmpeg gpac exiftool
-# brew install ffmpeg mp4box exiftool
-# apt-get install ffmpeg mp4box exiftool
+# Windows：ffmpeg(https://www.gyan.dev/ffmpeg/builds) gpac(https://gpac.io/downloads) exiftool(https://exiftool.org/index.html)
+# macOS：brew install ffmpeg mp4box exiftool
+# Linus：apt-get install ffmpeg mp4box exiftool
 
-import os, uuid, shutil
+import os, sys, uuid, shutil
 
-# 输入图片目录
-inPath = 'Screenshots/'
+# 输入输出图片目录配置 可以配置多个目录，左输入，右输出 Win需要将\改成/
+inPathOutPath = {
+    'Genshin Impact Game/ScreenShot/': '游戏截图/原神/',
+    'StarRail Game/StarRail_Data/ScreenShots/': '游戏截图/星铁/',
+    'ZenlessZoneZero Game/ScreenShot/': '游戏截图/绝区零/',
+}
 
-# 输出图片目录
-outPath = 'heic/'
+# 在输出目录创建一个输入文件夹名的文件夹（方便多个输入输出到同一个目录）
+makeInDirInOutDir = False
 
 # 是否把gif转webp
 gif2webp = False
@@ -37,17 +41,22 @@ mp4box = 'mp4box'
 exiftool = 'exiftool'
 
 
-tmpFile = outPath + str( uuid.uuid4())[:8] + '.hvc'
+# 临时文件存在当前目录
+tmpFile = os.path.dirname(os.path.abspath(__file__)) + '/' + str( uuid.uuid4())[:8] + '.hvc'
+if getattr(sys, 'frozen', False):
+    tmpFile = os.path.dirname(sys.executable) + '/' + str( uuid.uuid4())[:8] + '.hvc'
 
 def exec(cmd):
     print(cmd)
     os.system(cmd)
 
-def covent(dir):
+def covent(dir, outPath, outDirJoinDirName=True):
     print('Dir: ' + dir)
     l = os.listdir(dir)
     l = sorted(l, key=lambda x: os.path.getctime(os.path.join(dir, x)))
-    outDir = os.path.join(outPath,dir)
+    outDir = outPath
+    if outDirJoinDirName:
+        outDir = os.path.join(outPath,dir)
     if not os.path.exists(outDir):
         os.makedirs(outDir)
     for i in l:
@@ -106,7 +115,12 @@ def covent(dir):
         os.rmdir(outDir)
 
 
-if not os.path.isdir(outPath):
-    os.makedirs(outPath)
-
-covent(inPath)
+if __name__ == "__main__":
+    for inPath, outPath in inPathOutPath.items():
+        if inPath[-1] != '/':
+            inPath += '/'
+        if outPath[-1] != '/':
+            outPath += '/'
+        if not os.path.isdir(outPath):
+            os.makedirs(outPath)
+        covent(inPath, outPath, makeInDirInOutDir)
