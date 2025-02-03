@@ -1,7 +1,7 @@
 # coding=utf-8
 
 # png2heic 批量图片转heic  gif转webp
-# v5.0
+# v5.1
 # Sparkle 20220228
 # 需要ffmpeg mp4box exiftool
 # Windows：ffmpeg(https://www.gyan.dev/ffmpeg/builds) gpac(https://gpac.io/downloads) exiftool(https://exiftool.org/index.html)
@@ -64,7 +64,7 @@ def covent(dir, outPath, outDirJoinDirName=True):
         outName = None
         outDirName = None
         if os.path.isdir(inFile):
-            covent(inFile)
+            covent(inFile, outPath)
         elif i.endswith('.jpg') or i.endswith('.png') or i.endswith('.JPG') or i.endswith('.PNG'):
             outName = i[:-3] + 'heic'
         elif i.endswith('.jpeg') or i.endswith('.JPEG'):
