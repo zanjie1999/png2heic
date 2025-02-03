@@ -1,7 +1,7 @@
 # coding=utf-8
 
 # png2heic 批量图片转heic  gif转webp
-# v5.1
+# v5.3
 # Sparkle 20220228
 # 需要ffmpeg mp4box exiftool
 # Windows：ffmpeg(https://www.gyan.dev/ffmpeg/builds) gpac(https://gpac.io/downloads) exiftool(https://exiftool.org/index.html)
@@ -33,7 +33,7 @@ useYuv444 = False
 coventHeic = False
 
 # 删除原文件
-deleteInFile = False
+deleteInFile = True
 
 # 三个依赖的执行文件路径
 ffmpeg = 'ffmpeg'
@@ -50,13 +50,15 @@ def exec(cmd):
     print(cmd)
     os.system(cmd)
 
-def covent(dir, outPath, outDirJoinDirName=True):
+def covent(dir, inPath, outPath, outDirJoinDirName):
     print('Dir: ' + dir)
     l = os.listdir(dir)
     l = sorted(l, key=lambda x: os.path.getctime(os.path.join(dir, x)))
     outDir = outPath
     if outDirJoinDirName:
         outDir = os.path.join(outPath,dir)
+    elif dir != inPath:
+        outDir = os.path.join(outPath,dir[len(inPath):])
     if not os.path.exists(outDir):
         os.makedirs(outDir)
     for i in l:
@@ -64,7 +66,7 @@ def covent(dir, outPath, outDirJoinDirName=True):
         outName = None
         outDirName = None
         if os.path.isdir(inFile):
-            covent(inFile, outPath)
+            covent(inFile, inPath, outPath, outDirJoinDirName)
         elif i.endswith('.jpg') or i.endswith('.png') or i.endswith('.JPG') or i.endswith('.PNG'):
             outName = i[:-3] + 'heic'
         elif i.endswith('.jpeg') or i.endswith('.JPEG'):
@@ -123,4 +125,4 @@ if __name__ == "__main__":
             outPath += '/'
         if not os.path.isdir(outPath):
             os.makedirs(outPath)
-        covent(inPath, outPath, makeInDirInOutDir)
+        covent(inPath, inPath, outPath, makeInDirInOutDir)
