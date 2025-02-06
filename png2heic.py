@@ -1,7 +1,7 @@
 # coding=utf-8
 
 # png2heic 批量图片转heic  gif转webp
-# v5.3
+# v5.4
 # Sparkle 20220228
 # 需要ffmpeg mp4box exiftool
 # Windows：ffmpeg(https://www.gyan.dev/ffmpeg/builds) gpac(https://gpac.io/downloads) exiftool(https://exiftool.org/index.html)
@@ -56,9 +56,14 @@ def covent(dir, inPath, outPath, outDirJoinDirName):
     l = sorted(l, key=lambda x: os.path.getctime(os.path.join(dir, x)))
     outDir = outPath
     if outDirJoinDirName:
-        outDir = os.path.join(outPath,dir)
+        # 总有些人喜欢写绝对路径 只给他创建一层文件夹
+        if os.path.isabs(dir):
+            outDir = os.path.join(outPath, os.path.basename(dir[:-1]))
+        else:
+            outDir = os.path.join(outPath, dir)
     elif dir != inPath:
         outDir = os.path.join(outPath,dir[len(inPath):])
+    print('OutDir:', outDir)
     if not os.path.exists(outDir):
         os.makedirs(outDir)
     for i in l:
@@ -66,7 +71,7 @@ def covent(dir, inPath, outPath, outDirJoinDirName):
         outName = None
         outDirName = None
         if os.path.isdir(inFile):
-            covent(inFile, inPath, outPath, outDirJoinDirName)
+            covent(inFile, inPath, outDir, outDirJoinDirName)
         elif i.endswith('.jpg') or i.endswith('.png') or i.endswith('.JPG') or i.endswith('.PNG'):
             outName = i[:-3] + 'heic'
         elif i.endswith('.jpeg') or i.endswith('.JPEG'):
@@ -126,3 +131,4 @@ if __name__ == "__main__":
         if not os.path.isdir(outPath):
             os.makedirs(outPath)
         covent(inPath, inPath, outPath, makeInDirInOutDir)
+
