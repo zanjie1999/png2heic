@@ -1,7 +1,7 @@
 # coding=utf-8
 
 # png2heic 批量图片转heic  gif转webp
-# v5.4
+# v6.0
 # Sparkle 20220228
 # 需要ffmpeg mp4box exiftool
 # Windows：ffmpeg(https://www.gyan.dev/ffmpeg/builds) gpac(https://gpac.io/downloads) exiftool(https://exiftool.org/index.html)
@@ -15,6 +15,7 @@ inPathOutPath = {
     'Genshin Impact Game/ScreenShot/': '游戏截图/原神/',
     'StarRail Game/StarRail_Data/ScreenShots/': '游戏截图/星铁/',
     'ZenlessZoneZero Game/ScreenShot/': '游戏截图/绝区零/',
+    'D:\Pictures\Screenshots': 'D:\Pictures\Screenshots',
 }
 
 # 在输出目录创建一个输入文件夹名的文件夹（方便多个输入输出到同一个目录）
@@ -33,13 +34,20 @@ useYuv444 = False
 coventHeic = False
 
 # 删除原文件
-deleteInFile = True
+deleteInFile = False
 
-# 三个依赖的执行文件路径
+# 三个依赖的执行文件路径，如果已加入PATH那就维持这样就好
 ffmpeg = 'ffmpeg'
 mp4box = 'mp4box'
 exiftool = 'exiftool'
 
+# ffmpeg公共参数，可以修改增加更多自定义功能
+# 例如在vf中增加滤镜，用半角逗号,来分隔多个效果，默认的scale调整大小是为了将分辨率转成2的倍数（因为heic不支持）,你也可以修改他来调整输出分辨率
+# 举个例子，从左上角裁剪 crop=WIDTH:HEIGHT:X:Y 可以让你在多显示器截图时只保存留显示器1的部分，那就修改成 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2,crop=3840:2160:0:0"
+ffmpegArg = '-deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2,crop=3840:2160:0:0" '
+
+
+ffmpegArgHevc = ffmpegArg + '-crf 10 -psy-rd 0.4 -aq-strength 0.4 -preset veryslow -pix_fmt ' + ('yuv444p10le' if useYuv444 else 'yuv420p10le')
 
 # 临时文件存在当前目录
 tmpFile = os.path.dirname(os.path.abspath(__file__)) + '/' + str( uuid.uuid4())[:8] + '.hvc'
@@ -56,14 +64,9 @@ def covent(dir, inPath, outPath, outDirJoinDirName):
     l = sorted(l, key=lambda x: os.path.getctime(os.path.join(dir, x)))
     outDir = outPath
     if outDirJoinDirName:
-        # 总有些人喜欢写绝对路径 只给他创建一层文件夹
-        if os.path.isabs(dir):
-            outDir = os.path.join(outPath, os.path.basename(dir[:-1]))
-        else:
-            outDir = os.path.join(outPath, dir)
+        outDir = os.path.join(outPath,dir)
     elif dir != inPath:
         outDir = os.path.join(outPath,dir[len(inPath):])
-    print('OutDir:', outDir)
     if not os.path.exists(outDir):
         os.makedirs(outDir)
     for i in l:
@@ -71,7 +74,7 @@ def covent(dir, inPath, outPath, outDirJoinDirName):
         outName = None
         outDirName = None
         if os.path.isdir(inFile):
-            covent(inFile, inPath, outDir, outDirJoinDirName)
+            covent(inFile, inPath, outPath, outDirJoinDirName)
         elif i.endswith('.jpg') or i.endswith('.png') or i.endswith('.JPG') or i.endswith('.PNG'):
             outName = i[:-3] + 'heic'
         elif i.endswith('.jpeg') or i.endswith('.JPEG'):
@@ -81,34 +84,40 @@ def covent(dir, inPath, outPath, outDirJoinDirName):
                 outDirName = os.path.join(outDir, i[:-3] + 'webp')
                 if not os.path.exists(outDirName):
                     print(inFile,' ',outDirName)
-                    exec(ffmpeg + ' -i "' + inFile + '" -vcodec webp -loop 0 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -pix_fmt yuva420p "' + outDirName + '"')
+                    exec(f'{ffmpeg} -i "{inFile}" -vcodec webp -loop 0 {ffmpegArg} -pix_fmt yuva420p "{outDirName}"')
                     if copyExif:
-                        exec(exiftool + ' -tagsFromFile "' + inFile + '" -overwrite_original "' + outDirName + '"')
+                        exec(f'{exiftool} -tagsFromFile "{inFile}" -overwrite_original "{outDirName}"')
             else:
                 outDirName = os.path.join(outDir, i[:-3] + 'gif')
                 if not os.path.exists(outDirName):
+                    # 不转换gif就复制gif过去
                     print(inFile,' ',outDirName)
                     shutil.copy(inFile, outDirName)
-        elif coventHeic and (i.endswith('.HEIC') or i.endswith('.heic')):
+        elif i.endswith('.HEIC') or i.endswith('.heic'):
             outDirName = os.path.join(outDir, i[:-4] + 'heic')
-            if not os.path.exists(outDirName):
+            if coventHeic:
+                if not os.path.exists(outDirName):
+                    print(inFile,' ',outDirName)
+                    exec(f'{mp4box} -dump-item 1:path={tmpFile}.hvc1 "{inFile}"')
+                    exec(f'{ffmpeg} -i {tmpFile}.hvc1 {ffmpegArgHevc} -f hevc ' + tmpFile)
+                    exec(f'{mp4box} -add-image {tmpFile}:primary -ab heic -new "{outDirName}"')
+                    os.remove(tmpFile + '.hvc1')
+                    os.remove(tmpFile)
+                    if copyExif:
+                        exec(f'{exiftool} -tagsFromFile "{inFile}" -overwrite_original "{outDirName}"')
+            elif not os.path.exists(outDirName):
+                # 不转换heic不存在就复制过去
                 print(inFile,' ',outDirName)
-                exec(mp4box + ' -dump-item 1:path=' + tmpFile + '.hvc1 "' + inFile + '"')
-                exec(ffmpeg + ' -i ' + tmpFile + '.hvc1 -crf 10 -psy-rd 0.4 -aq-strength 0.4 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset veryslow -pix_fmt yuv420p10le -f hevc ' + tmpFile)
-                exec(mp4box + ' -add-image ' + tmpFile + ':primary -ab heic -new "' + outDirName + '"')
-                os.remove(tmpFile + '.hvc1')
-                os.remove(tmpFile)
-                if copyExif:
-                    exec(exiftool + ' -tagsFromFile "' + inFile + '" -overwrite_original "' + outDirName + '"')
+                shutil.copy(inFile, outDirName)
         if outName:
             outDirName = os.path.join(outDir,outName)
             if not os.path.exists(outDirName):
                 print(inFile,' ',outDirName)
-                exec(ffmpeg + ' -i "' + inFile + '" -crf 10 -psy-rd 0.4 -aq-strength 0.4 -deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -preset veryslow -pix_fmt ' + ('yuv444p10le' if useYuv444 else 'yuv420p10le') + ' -f hevc ' + tmpFile)
-                exec(mp4box + ' -add-image ' + tmpFile + ':primary -ab heic -new "' + outDirName + '"')
+                exec(f'{ffmpeg} -i "{inFile}" {ffmpegArgHevc} -f hevc ' + tmpFile)
+                exec(f'{mp4box} -add-image {tmpFile}:primary -ab heic -new "{outDirName}"')
                 os.remove(tmpFile)
                 if copyExif:
-                    exec(exiftool + ' -tagsFromFile "' + inFile + '" -overwrite_original "' + outDirName + '"')
+                    exec(f'{exiftool} -tagsFromFile "{inFile}" -overwrite_original "{outDirName}"')
                 
         if outDirName:
             s = os.stat(inFile) # 同步 访问时间 修改时间
@@ -131,4 +140,3 @@ if __name__ == "__main__":
         if not os.path.isdir(outPath):
             os.makedirs(outPath)
         covent(inPath, inPath, outPath, makeInDirInOutDir)
-
