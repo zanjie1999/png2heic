@@ -1,7 +1,7 @@
 # coding=utf-8
 
 # png2heic 批量图片转heic  gif转webp
-# v6.0
+# v6.1
 # Sparkle 20220228
 # 需要ffmpeg mp4box exiftool
 # Windows：ffmpeg(https://www.gyan.dev/ffmpeg/builds) gpac(https://gpac.io/downloads) exiftool(https://exiftool.org/index.html)
@@ -93,9 +93,10 @@ def covent(dir, inPath, outPath, outDirJoinDirName):
                     # 不转换gif就复制gif过去
                     print(inFile,' ',outDirName)
                     shutil.copy(inFile, outDirName)
+                    outDirName = ''
         elif i.endswith('.HEIC') or i.endswith('.heic'):
-            outDirName = os.path.join(outDir, i[:-4] + 'heic')
             if coventHeic:
+                outDirName = os.path.join(outDir, i[:-4] + 'heic')
                 if not os.path.exists(outDirName):
                     print(inFile,' ',outDirName)
                     exec(f'{mp4box} -dump-item 1:path={tmpFile}.hvc1 "{inFile}"')
@@ -105,10 +106,13 @@ def covent(dir, inPath, outPath, outDirJoinDirName):
                     os.remove(tmpFile)
                     if copyExif:
                         exec(f'{exiftool} -tagsFromFile "{inFile}" -overwrite_original "{outDirName}"')
-            elif not os.path.exists(outDirName):
-                # 不转换heic不存在就复制过去
-                print(inFile,' ',outDirName)
-                shutil.copy(inFile, outDirName)
+            else:
+                outDirName = os.path.join(outDir, i[:-4] + 'heic')
+                if not os.path.exists(outDirName):
+                    # 不转换heic不存在就复制过去
+                    print(inFile,' ',outDirName)
+                    shutil.copy(inFile, outDirName)
+                    outDirName = ''
         if outName:
             outDirName = os.path.join(outDir,outName)
             if not os.path.exists(outDirName):
