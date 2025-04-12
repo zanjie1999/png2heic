@@ -15,7 +15,7 @@ inPathOutPath = {
     'Genshin Impact Game/ScreenShot/': '游戏截图/原神/',
     'StarRail Game/StarRail_Data/ScreenShots/': '游戏截图/星铁/',
     'ZenlessZoneZero Game/ScreenShot/': '游戏截图/绝区零/',
-    'D:\Pictures\Screenshots': 'D:\Pictures\Screenshots',
+    'D:/Pictures/Screenshots': 'D:/Pictures/Screenshots',
 }
 
 # 在输出目录创建一个输入文件夹名的文件夹（方便多个输入输出到同一个目录）
@@ -44,7 +44,7 @@ exiftool = 'exiftool'
 # ffmpeg公共参数，可以修改增加更多自定义功能
 # 例如在vf中增加滤镜，用半角逗号,来分隔多个效果，默认的scale调整大小是为了将分辨率转成2的倍数（因为heic不支持）,你也可以修改他来调整输出分辨率
 # 举个例子，从左上角裁剪 crop=WIDTH:HEIGHT:X:Y 可以让你在多显示器截图时只保存留显示器1的部分，那就修改成 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2,crop=min(3840\,iw):min(2160\,ih):0:0"
-ffmpegArg = '-deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" '
+ffmpegArg = r'-deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2," '
 
 
 ffmpegArgHevc = ffmpegArg + '-crf 10 -psy-rd 0.4 -aq-strength 0.4 -preset veryslow -pix_fmt ' + ('yuv444p10le' if useYuv444 else 'yuv420p10le')
@@ -88,12 +88,11 @@ def covent(dir, inPath, outPath, outDirJoinDirName):
                     if copyExif:
                         exec(f'{exiftool} -tagsFromFile "{inFile}" -overwrite_original "{outDirName}"')
             else:
-                outDirName = os.path.join(outDir, i[:-3] + 'gif')
-                if not os.path.exists(outDirName):
+                outDirName1 = os.path.join(outDir, i[:-3] + 'gif')
+                if not os.path.exists(outDirName1):
                     # 不转换gif就复制gif过去
-                    print(inFile,' ',outDirName)
-                    shutil.copy(inFile, outDirName)
-                    outDirName = ''
+                    print(inFile,' ',outDirName1)
+                    shutil.copy(inFile, outDirName1)
         elif i.endswith('.HEIC') or i.endswith('.heic'):
             if coventHeic:
                 outDirName = os.path.join(outDir, i[:-4] + 'heic')
@@ -107,12 +106,11 @@ def covent(dir, inPath, outPath, outDirJoinDirName):
                     if copyExif:
                         exec(f'{exiftool} -tagsFromFile "{inFile}" -overwrite_original "{outDirName}"')
             else:
-                outDirName = os.path.join(outDir, i[:-4] + 'heic')
-                if not os.path.exists(outDirName):
+                outDirName1 = os.path.join(outDir, i[:-4] + 'heic')
+                if not os.path.exists(outDirName1):
                     # 不转换heic不存在就复制过去
-                    print(inFile,' ',outDirName)
-                    shutil.copy(inFile, outDirName)
-                    outDirName = ''
+                    print(inFile,' ',outDirName1)
+                    shutil.copy(inFile, outDirName1)
         if outName:
             outDirName = os.path.join(outDir,outName)
             if not os.path.exists(outDirName):
