@@ -44,7 +44,7 @@ exiftool = 'exiftool'
 # ffmpeg公共参数，可以修改增加更多自定义功能
 # 例如在vf中增加滤镜，用半角逗号,来分隔多个效果，默认的scale调整大小是为了将分辨率转成2的倍数（因为heic不支持）,你也可以修改他来调整输出分辨率
 # 举个例子，从左上角裁剪 crop=WIDTH:HEIGHT:X:Y 可以让你在多显示器截图时只保存留显示器1的部分，那就修改成 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2,crop=3840:2160:0:0"
-ffmpegArg = '-deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2,crop=3840:2160:0:0" '
+ffmpegArg = '-deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" '
 
 
 ffmpegArgHevc = ffmpegArg + '-crf 10 -psy-rd 0.4 -aq-strength 0.4 -preset veryslow -pix_fmt ' + ('yuv444p10le' if useYuv444 else 'yuv420p10le')
