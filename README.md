@@ -18,7 +18,7 @@ heic不支持透明，因为hevc没有透明，后续考虑支持检测透明png
 https://github.com/zanjie1999/mecopy
 
 # 安装依赖
-看png2heic.py文件头部，想必没什么人真的会看文档  
+看png2heic.py文件头部，想必没什么人真的会看文档，如果你看了，那还[有个视频教你如何在Windows下安装](https://www.bilibili.com/video/BV1jefDYfEiB)  
 配置好了直接运行就会自动转换
 
 # windows的heic支持
