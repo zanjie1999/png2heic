@@ -101,10 +101,12 @@ def covent(dir, inPath, outPath, outDirJoinDirName):
                 outDirName = os.path.join(outDir, i[:-4] + 'heic')
                 if not os.path.exists(outDirName):
                     print(inFile,' ',outDirName)
-                    exec(f'{mp4box} -dump-item 1:path={tmpFile}.hvc1 "{inFile}"')
-                    exec(f'{ffmpeg} -i {tmpFile}.hvc1 {ffmpegArgHevc} -f hevc ' + tmpFile)
+                    # 这个命令在win不支持绝对路径
+                    tmpFile2 = str(uuid.uuid4())[:8]
+                    exec(f'{mp4box} -dump-item 1:path={tmpFile2}.hvc1 "{inFile}"')
+                    exec(f'{ffmpeg} -i {tmpFile2}.hvc1 {ffmpegArgHevc} -f hevc ' + tmpFile)
                     exec(f'{mp4box} -add-image {tmpFile}:primary -ab heic -new "{outDirName}"')
-                    os.remove(tmpFile + '.hvc1')
+                    os.remove(tmpFile2 + '.hvc1')
                     os.remove(tmpFile)
                     if copyExif:
                         exec(f'{exiftool} -tagsFromFile "{inFile}" -overwrite_original "{outDirName}"')
