@@ -1,7 +1,7 @@
 # coding=utf-8
 
 # png2heic 批量图片转heic  gif转webp
-# v6.1
+# v6.2
 # Sparkle 20220228
 # 需要ffmpeg mp4box exiftool
 # Windows：ffmpeg(https://www.gyan.dev/ffmpeg/builds) gpac(https://gpac.io/downloads) exiftool(https://exiftool.org/index.html)
@@ -27,7 +27,10 @@ gif2webp = False
 # 是否复制exif信息
 copyExif = False
 
-# 使用yuv444 10bit Android不兼容 颜色会好一丁点
+# 使用10bit  不使用的话可以增加兼容性 并且亮度范围更大 能减少偏色但可能给番剧截图带来色带 个人认为yuv到yuvj比8bit到10bit带来的视觉差更明显
+use10bit = False
+
+# 使用yuv444 Android不兼容 颜色会好一丁点 不支持10bit的大概率也不可能支持yuv444
 useYuv444 = False
 
 # 转换heic 可以将不支持的heic转换成目标heic
@@ -47,7 +50,7 @@ exiftool = 'exiftool'
 ffmpegArg = r'-deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2," '
 
 
-ffmpegArgHevc = ffmpegArg + '-crf 10 -psy-rd 0.4 -aq-strength 0.4 -preset veryslow -pix_fmt ' + ('yuv444p10le' if useYuv444 else 'yuv420p10le')
+ffmpegArgHevc = ffmpegArg + '-crf 10 -psy-rd 0.4 -aq-strength 0.4 -preset veryslow -pix_fmt ' + ('yuv444p10le' if useYuv444 and use10bit else 'yuvj444p' if useYuv444 else 'yuvj420p10le' if use10bit else 'yuvj420p')
 
 # 临时文件存在当前目录
 tmpFile = os.path.dirname(os.path.abspath(__file__)) + '/' + str( uuid.uuid4())[:8] + '.hvc'
