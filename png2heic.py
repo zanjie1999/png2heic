@@ -50,7 +50,7 @@ exiftool = 'exiftool'
 ffmpegArg = r'-deblock 1:1 -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2," '
 
 
-ffmpegArgHevc = ffmpegArg + '-crf 10 -psy-rd 0.4 -aq-strength 0.4 -preset veryslow -pix_fmt ' + ('yuv444p10le' if useYuv444 and use10bit else 'yuvj444p' if useYuv444 else 'yuvj420p10le' if use10bit else 'yuvj420p')
+ffmpegArgHevc = ffmpegArg + '-crf 10 -psy-rd 0.4 -aq-strength 0.4 -preset veryslow -pix_fmt ' + ('yuv444p10le' if useYuv444 and use10bit else 'yuvj444p' if useYuv444 else 'yuv420p10le' if use10bit else 'yuvj420p')
 
 # 临时文件存在当前目录
 tmpFile = os.path.dirname(os.path.abspath(__file__)) + '/' + str( uuid.uuid4())[:8] + '.hvc'
